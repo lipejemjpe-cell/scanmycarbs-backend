@@ -1,0 +1,137 @@
+// Prisma Schema pour ScanMyCarbs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Modèle Utilisateur
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String?
+  name          String?
+  
+  // Auth sociale
+  googleId      String?   @unique
+  appleId       String?   @unique
+  
+  // Préférences
+  language      String    @default("fr")
+  darkMode      Boolean   @default(false)
+  dailyGoal     Int?
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  scans         Scan[]
+  manualFoods   ManualFood[]
+  
+  @@map("users")
+}
+
+// Modèle Scan
+model Scan {
+  id            String    @id @default(uuid())
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Métadonnées
+  imageUrl      String?
+  scanMethod    String    @default("mlkit")
+  type          String    @default("barcode")
+  
+  // Résultats totaux
+  totalCalories Float
+  totalCarbs    Float
+  totalProtein  Float     @default(0)
+  totalFat      Float     @default(0)
+  
+  // Détails
+  mealType      String?
+  notes         String?
+  foods         String    @default("[]")
+  
+  // Timestamps
+  scannedAt     DateTime  @default(now())
+  
+  // Relations
+  scannedFoods  ScannedFood[]
+  
+  @@map("scans")
+  @@index([userId, scannedAt])
+}
+
+// Modèle Aliment Scanné
+model ScannedFood {
+  id            String    @id @default(uuid())
+  scanId        String
+  scan          Scan      @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  
+  // Informations
+  name          String
+  quantity      Float     @default(100)
+  
+  // Valeurs nutritionnelles pour 100g
+  calories      Float
+  carbs         Float
+  protein       Float
+  fat           Float
+  
+  // Source
+  source        String    @default("ciqual")
+  sourceId      String?
+  
+  @@map("scanned_foods")
+  @@index([scanId])
+}
+
+// Modèle Aliment Manuel
+model ManualFood {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Informations
+  name          String
+  brand         String?
+  
+  // Valeurs pour 100g
+  calories      Float
+  carbs         Float
+  protein       Float
+  fat           Float
+  
+  // Métadonnées
+  category      String?
+  barcode       String?   @unique
+  
+  createdAt     DateTime  @default(now())
+  
+  @@map("manual_foods")
+  @@index([userId])
+}
+
+// Cache Ciqual
+model CiqualCache {
+  id            String    @id @default(uuid())
+  ciqualId      String    @unique
+  
+  // Données
+  name          String
+  calories      Float
+  carbs         Float
+  protein       Float
+  fat           Float
+  
+  cachedAt      DateTime  @default(now())
+  
+  @@map("ciqual_cache")
+}
