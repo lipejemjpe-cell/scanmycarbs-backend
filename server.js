@@ -87,6 +87,10 @@ app.get('/api/stats', (req, res) => {
     totalCarbs: 0,
   });
 });
+// Historique des scans
+app.get('/api/scans', (req, res) => {
+  res.json([]);
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ ScanMyCarbs API démarrée sur le port ${PORT}`);
