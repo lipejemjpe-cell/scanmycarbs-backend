@@ -23,10 +23,18 @@ app.get('/', (req, res) => {
 });
 
 // Sauvegarder un scan
-app.post('/api/scans', (req, res) => {
+app.post('/api/scans',  (req, res) => {
   const {type, foods, totalCarbs, totalCalories, scannedAt} = req.body;
   console.log('📝 Scan reçu:', {type, totalCarbs, totalCalories});
   res.json({success: true, message: 'Scan sauvegardé'});
+});
+// Stats du jour
+app.get('/api/scans/stats', (req, res) => {
+  res.json({
+    scansToday: 0,
+    totalCarbsToday: 0,
+    totalCaloriesToday: 0
+  });
 });
 
 // Recherche CIQUAL
@@ -71,6 +79,15 @@ app.get('/api/barcode/:code', async (req, res) => {
 });
 
 // Démarrer le serveur
+// Stats globales
+app.get('/api/stats', (req, res) => {
+  res.json({
+    totalScans: 0,
+    totalCalories: 0,
+    totalCarbs: 0,
+  });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ ScanMyCarbs API démarrée sur le port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
