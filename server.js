@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   'https://ycyukrdmgkcxiczgbtwu.supabase.co',
-  'VOTRE_CLÉ_SUPABASE_ANON' re_R2kCro1s_JDyFjPJpqCAs8xE1CNQCBGE4
+  're_R2kCro1s_JDyFjPJpqCAs8xE1CNQCBGE4' ./* supabase key */
 );
 
 const express = require('express');
