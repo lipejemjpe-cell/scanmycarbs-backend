@@ -1,3 +1,10 @@
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  'https://ycyukrdmgkcxiczgbtwu.supabase.co',
+  'VOTRE_CLÉ_SUPABASE_ANON' re_R2kCro1s_JDyFjPJpqCAs8xE1CNQCBGE4
+);
+
 const express = require('express');
 const cors = require('cors');
 
@@ -23,18 +30,50 @@ app.get('/', (req, res) => {
 });
 
 // Sauvegarder un scan
-app.post('/api/scans',  (req, res) => {
-  const {type, foods, totalCarbs, totalCalories, scannedAt} = req.body;
-  console.log('📝 Scan reçu:', {type, totalCarbs, totalCalories});
-  res.json({success: true, message: 'Scan sauvegardé'});
+app.post('/api/scans', async (req, res) => {
+  try {
+    const {type, foods, totalCarbs, totalCalories, scannedAt} = req.body;
+    
+    // Sauvegarder dans Supabase
+    const { data, error } = await supabase
+      .from('scans')
+      .insert([{
+        user_id: 'user_id_temporaire', // TODO: récupérer du JWT
+        type,
+        foods,
+        total_carbs: totalCarbs,
+        total_calories: totalCalories,
+        scanned_at: scannedAt || new Date().toISOString(),
+      }]);
+
+    if (error) {
+      console.error('Erreur Supabase:', error);
+      return res.status(500).json({error: error.message});
+    }
+
+    console.log('✅ Scan sauvegardé dans Supabase');
+    res.json({success: true, data});
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({error: error.message});
+  }
 });
 // Stats du jour
-app.get('/api/scans/stats', (req, res) => {
-  res.json({
-    scansToday: 0,
-    totalCarbsToday: 0,
-    totalCaloriesToday: 0
-  });
+app.get('/api/scans', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('scans')
+      .select('*')
+      .order('scanned_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.json([]);
+  }
 });
 
 // Recherche CIQUAL

@@ -1,94 +1,25 @@
-import express, {Application, Request, Response, NextFunction} from 'express';
+import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import dotenv from 'dotenv';
-import rateLimit from 'express-rate-limit';
+import scansRoutes from './routes/scans.routes'; // Assure-toi que ce fichier existe
 
-// Routes
-import authRoutes from './routes/auth.routes';
-import scanRoutes from './routes/scan.routes';
-import foodRoutes from './routes/food.routes';
-import userRoutes from './routes/user.routes';
-import exportRoutes from './routes/export.routes';
-import imageRoutes from './routes/image.routes';
-import scansRoutes from './routes/scans.routes';
-
-app.use('/api/scans', scansRoutes);
+const app = express();
 
 // Middleware
-import {errorHandler} from './middleware/errorHandler';
+app.use(cors()); // Autorise toutes les connexions (wifi, LAN, 4G, etc.)
+app.use(express.json());
 
-// Configuration
-dotenv.config();
+// Routes
+app.use('/api/scans', scansRoutes);
 
-const app: Application = express();
-const PORT = process.env.PORT || 3000;
-
-// Security middleware
-app.use(helmet());
-
-// CORS configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-  'http://localhost:8081',
-];
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  }),
-);
-
-// Body parsing
-app.use(express.json({limit: '10mb'}));
-app.use(express.urlencoded({extended: true, limit: '10mb'}));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message:
-    'Trop de requêtes depuis cette adresse IP, veuillez réessayer plus tard.',
-});
-app.use('/api/', limiter);
-
-// Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-  });
+// Optionnel : route test
+app.get('/', (req, res) => {
+  res.send('ScanMyCarbs backend is running ✅');
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/scan', scanRoutes);
-app.use('/api/food', foodRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/export', exportRoutes);
+// PORT correct pour React Native / Render
+const PORT = Number(process.env.PORT) || 3000;
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Route non trouvée',
-    path: req.path,
-  });
-});
-
-// Error handler (doit être en dernier)
-app.use(errorHandler);
-
-// Start server
+// Écoute sur 0.0.0.0 pour être accessible depuis ton téléphone
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur ScanMyCarbs démarré sur le port ${PORT}`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
-
-export default app;
