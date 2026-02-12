@@ -8,8 +8,21 @@ const supabase = createClient(
 const express = require('express');
 const cors = require('cors');
 
+const path = require('path');
 const app = express();
+
+// Servir le dossier public
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route test pour vérifier que le serveur fonctionne
+app.get('/', (req, res) => {
+  res.send('Backend OK');
+});
+
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 // Middleware
 app.use(cors());

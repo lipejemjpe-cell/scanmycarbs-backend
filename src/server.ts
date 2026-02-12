@@ -1,12 +1,20 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import {fileURLToPath} from 'url';
 import scansRoutes from './routes/scans.routes'; // Assure-toi que ce fichier existe
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 // Middleware
 app.use(cors()); // Autorise toutes les connexions (wifi, LAN, 4G, etc.)
 app.use(express.json());
+
+// 📦 Servir les APK
+app.use('/download', express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/api/scans', scansRoutes);
