@@ -141,6 +141,51 @@ app.get('/api/stats', (req, res) => {
 app.get('/api/scans', (req, res) => {
   res.json([]);
 });
+// === ROUTES SÉCURISÉES POUR IA ===
+
+// Variables d'environnement (à configurer sur Render.com)
+const GOOGLE_VISION_API_KEY = process.env.GOOGLE_VISION_API_KEY || '';
+
+// Route proxy pour Google Vision
+app.post('/api/vision/analyze', async (req, res) => {
+  try {
+    const {base64Image} = req.body;
+
+    if (!base64Image) {
+      return res.status(400).json({error: 'Image requise'});
+    }
+
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          requests: [{
+            image: {content: base64Image},
+            features: [
+              {type: 'LABEL_DETECTION', maxResults: 10},
+              {type: 'OBJECT_LOCALIZATION', maxResults: 5},
+            ],
+          }],
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Vision API error:', errorData);
+      return res.status(response.status).json({error: 'Vision API error'});
+    }
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (error) {
+    console.error('Erreur Vision API:', error);
+    res.status(500).json({error: error.message});
+  }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ ScanMyCarbs API démarrée sur le port ${PORT}`);
