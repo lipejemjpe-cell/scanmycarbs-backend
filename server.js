@@ -137,11 +137,6 @@ app.get('/api/stats', (req, res) => {
     totalCarbs: 0,
   });
 });
-// Historique des scans
-app.get('/api/scans', (req, res) => {
-  res.json([]);
-});
-// === ROUTES SÉCURISÉES POUR IA ===
 
 // Variables d'environnement (à configurer sur Render.com)
 const GOOGLE_VISION_API_KEY = process.env.GOOGLE_VISION_API_KEY || '';
@@ -186,6 +181,61 @@ app.post('/api/vision/analyze', async (req, res) => {
     res.status(500).json({error: error.message});
   }
 });
+/* =========================
+   🤖 NOUVELLE ROUTE IA
+========================= */
+
+app.post('/api/predict', async (req, res) => {
+  try {
+    const { glucose, carbs } = req.body;
+
+    // 🔥 fallback simple (fiable)
+    let prediction = glucose + carbs * 0.02;
+
+    // 🔥 tentative IA (optionnelle)
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'Répond uniquement avec un nombre (glycémie future).',
+            },
+            {
+              role: 'user',
+              content: `Glycémie: ${glucose}, glucides: ${carbs}`,
+            },
+          ],
+        }),
+      });
+
+      const data = await response.json();
+      const aiValue = parseFloat(data.choices?.[0]?.message?.content);
+
+      if (!isNaN(aiValue)) {
+        prediction = aiValue;
+      }
+    } catch (e) {
+      console.log('⚠️ fallback utilisé');
+    }
+
+    res.json({ prediction });
+
+  } catch (error) {
+    console.error('Erreur IA:', error);
+    res.status(500).json({ error: 'Erreur IA' });
+  }
+});
+
+/* =========================
+   🚀 LANCEMENT SERVEUR
+========================= */
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ ScanMyCarbs API démarrée sur le port ${PORT}`);
